@@ -19,8 +19,14 @@ pipeline {
 
         stage('Verify JAR') {
             steps {
-                echo 'Checking generated JAR file...'
                 sh 'ls -lh target/*.jar'
+            }
+        }
+
+        stage('Docker Build') {
+            steps {
+                echo 'Building Docker image...'
+                sh 'docker build -t payment-app:1.0 .'
             }
         }
     }
