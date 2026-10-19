@@ -5,22 +5,22 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
-                echo 'Starting GitHub checkout...'
-                checkout scm
+                echo 'Source code checked out from GitHub'
                 sh 'git log -1 --oneline'
-                echo 'GitHub checkout completed successfully!'
             }
         }
 
-        stage('Verify Tools') {
+        stage('Maven Build') {
             steps {
-                sh '''
-                    echo "Checking installed tools..."
-                    git --version
-                    java -version
-                    mvn --version
-                    docker --version
-                '''
+                echo 'Building Payment application...'
+                sh 'mvn clean package'
+            }
+        }
+
+        stage('Verify JAR') {
+            steps {
+                echo 'Checking generated JAR file...'
+                sh 'ls -lh target/*.jar'
             }
         }
     }
