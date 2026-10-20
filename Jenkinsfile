@@ -28,6 +28,24 @@ pipeline {
             }
         }
 
+        stage('SonarQube Analysis') {
+            steps {
+                echo 'Analyzing source code with SonarQube Cloud...'
+
+                withCredentials([
+                    string(credentialsId: 'sonarqube-token', variable: 'SONAR_TOKEN')
+                ]) {
+                    sh '''
+                        mvn org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
+                          -Dsonar.projectKey=Midhun0917_git-devops-lab \
+                          -Dsonar.organization=midhun0917 \
+                          -Dsonar.host.url=https://sonarcloud.io \
+                          -Dsonar.token="$SONAR_TOKEN"
+                    '''
+                }
+            }
+        }
+
         stage('Docker Build') {
             steps {
                 echo 'Building Docker image...'
