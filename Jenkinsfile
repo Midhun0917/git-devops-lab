@@ -11,9 +11,16 @@ pipeline {
         }
 
         stage('Maven Build') {
-            steps {
-                echo 'Building Payment application...'
-                sh 'mvn clean package'
+    steps {
+        echo 'Building and testing Payment application...'
+        sh 'mvn clean package'
+    }
+    post {
+        always {
+            junit 'target/surefire-reports/*.xml'
+        }
+    }
+}
             }
         }
 
