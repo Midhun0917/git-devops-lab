@@ -11,16 +11,14 @@ pipeline {
         }
 
         stage('Maven Build') {
-    steps {
-        echo 'Building and testing Payment application...'
-        sh 'mvn clean package'
-    }
-    post {
-        always {
-            junit 'target/surefire-reports/*.xml'
-        }
-    }
-}
+            steps {
+                echo 'Building and testing Payment application...'
+                sh 'mvn clean package'
+            }
+            post {
+                always {
+                    junit 'target/surefire-reports/*.xml'
+                }
             }
         }
 
@@ -36,16 +34,15 @@ pipeline {
                 sh 'docker build -t payment-app:1.0 .'
             }
         }
-        
-stage('Docker Run') {
-    steps {
-        echo 'Running Payment application inside Docker...'
-        sh '''
-            docker rm -f payment-container || true
-            docker run --name payment-container payment-app:1.0
-        '''
-    }
-}
 
+        stage('Docker Run') {
+            steps {
+                echo 'Running Payment application inside Docker...'
+                sh '''
+                    docker rm -f payment-container || true
+                    docker run --name payment-container payment-app:1.0
+                '''
+            }
+        }
     }
 }
