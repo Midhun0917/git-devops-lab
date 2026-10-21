@@ -54,9 +54,10 @@ pipeline {
         }
 
 
+
 stage('Trivy Security Scan') {
     steps {
-        echo 'Scanning Docker image for vulnerabilities...'
+        echo 'Scanning Docker image for HIGH and CRITICAL vulnerabilities...'
 
         sh '''
             mkdir -p "$WORKSPACE/trivy-tmp"
@@ -65,14 +66,17 @@ stage('Trivy Security Scan') {
               --config /dev/null \
               --scanners vuln \
               --severity HIGH,CRITICAL \
-              --exit-code 0 \
+              --exit-code 1 \
               --format table \
               --output trivy-report.txt \
               payment-app:1.0
         '''
-
-        archiveArtifacts artifacts: 'trivy-report.txt',
-                         fingerprint: true
+    }
+    post {
+        always {
+            archiveArtifacts artifacts: 'trivy-report.txt',
+                             allowEmptyArchive: true
+        }
     }
 }
 
