@@ -81,6 +81,7 @@ stage('Trivy Security Scan') {
 }
 
 
+        
         stage('Docker Run') {
             steps {
                 echo 'Running Payment application inside Docker...'
@@ -88,6 +89,34 @@ stage('Trivy Security Scan') {
                     docker rm -f payment-container || true
                     docker run --name payment-container payment-app:1.0
                 '''
+            }
+        }
+
+        stage('Docker Hub Push') {
+            steps {
+                echo 'Publishing Payment application image to Docker Hub...'
+
+                withCredentials([
+                    usernamePassword(
+                        credentialsId: 'dockerhub-credentials',
+                        usernameVariable: 'DOCKER_USER',
+                        passwordVariable: 'DOCKER_TOKEN'
+                    )
+                ]) {
+                    sh '''
+                        set -eu
+
+                        echo "$DOCKER_TOKEN" | docker login \
+                          --username "$DOCKER_USER" \
+                          --password-stdin
+
+                        docker tag payment-app:1.0 "$DOCKER_USER/payment-app:${BUILD_NUMBER}"
+
+                        docker push "$DOCKER_USER/payment-app:${BUILD_NUMBER}"
+
+                        docker logout
+                    '''
+                }
             }
         }
     }
