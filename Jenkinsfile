@@ -53,6 +53,30 @@ pipeline {
             }
         }
 
+
+stage('Trivy Security Scan') {
+    steps {
+        echo 'Scanning Docker image for vulnerabilities...'
+
+        sh '''
+            mkdir -p "$WORKSPACE/trivy-tmp"
+
+            TMPDIR="$WORKSPACE/trivy-tmp" trivy image \
+              --config /dev/null \
+              --scanners vuln \
+              --severity HIGH,CRITICAL \
+              --exit-code 0 \
+              --format table \
+              --output trivy-report.txt \
+              payment-app:1.0
+        '''
+
+        archiveArtifacts artifacts: 'trivy-report.txt',
+                         fingerprint: true
+    }
+}
+
+
         stage('Docker Run') {
             steps {
                 echo 'Running Payment application inside Docker...'
