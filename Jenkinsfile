@@ -54,9 +54,10 @@ pipeline {
         }
 
 
+
 stage('Trivy Security Scan') {
     steps {
-        echo 'Scanning Docker image for vulnerabilities...'
+        echo 'Scanning Docker image for HIGH and CRITICAL vulnerabilities...'
 
         sh '''
             mkdir -p "$WORKSPACE/trivy-tmp"
@@ -65,26 +66,21 @@ stage('Trivy Security Scan') {
               --config /dev/null \
               --scanners vuln \
               --severity HIGH,CRITICAL \
-              --exit-code 0 \
+              --exit-code 1 \
               --format table \
               --output trivy-report.txt \
               payment-app:1.0
         '''
-
-        archiveArtifacts artifacts: 'trivy-report.txt',
-                         fingerprint: true
+    }
+    post {
+        always {
+            archiveArtifacts artifacts: 'trivy-report.txt',
+                             allowEmptyArchive: true
+        }
     }
 }
 
 
-        stage('Docker Run') {
-            steps {
-                echo 'Running Payment application inside Docker...'
-                sh '''
-                    docker rm -f payment-container || true
-                    docker run --name payment-container payment-app:1.0
-                '''
-            }
 
 stage('Docker Run') {
     steps {
@@ -118,6 +114,32 @@ stage('Docker Run') {
         '''
     }
 }
+        stage('Docker Hub Push') {
+            steps {
+                echo 'Publishing Payment application image to Docker Hub...'
 
+                withCredentials([
+                    usernamePassword(
+                        credentialsId: 'dockerhub-credentials',
+                        usernameVariable: 'DOCKER_USER',
+                        passwordVariable: 'DOCKER_TOKEN'
+                    )
+                ]) {
+                    sh '''
+                        set -eu
+
+                        echo "$DOCKER_TOKEN" | docker login \
+                          --username "$DOCKER_USER" \
+                          --password-stdin
+
+                        docker tag payment-app:1.0 "$DOCKER_USER/payment-app:${BUILD_NUMBER}"
+
+                        docker push "$DOCKER_USER/payment-app:${BUILD_NUMBER}"
+
+                        docker logout
+                    '''
+                }
+            }
+        }
     }
 }
