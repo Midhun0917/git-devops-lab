@@ -85,6 +85,39 @@ stage('Trivy Security Scan') {
                     docker run --name payment-container payment-app:1.0
                 '''
             }
-        }
+
+stage('Docker Run') {
+    steps {
+        echo 'Starting Payment application container...'
+
+        sh '''
+            set -eu
+
+            docker rm -f payment-container || true
+
+            docker run -d \
+              --name payment-container \
+              -p 127.0.0.1:8081:8080 \
+              payment-app:1.0
+
+            echo "Waiting for application health check..."
+
+            for i in $(seq 1 15); do
+                if curl --fail --silent http://127.0.0.1:8081/health; then
+                    echo ""
+                    echo "Application health check passed!"
+                    exit 0
+                fi
+
+                sleep 2
+            done
+
+            echo "Application health check failed!"
+            docker logs payment-container
+            exit 1
+        '''
+    }
+}
+
     }
 }
