@@ -141,5 +141,44 @@ stage('Docker Run') {
                 }
             }
         }
+        
+stage('Deploy to Kubernetes') {
+    steps {
+        echo 'Deploying Payment application to Kubernetes...'
+
+        withCredentials([
+            string(
+                credentialsId: 'k8s-deployer-token',
+                variable: 'K8S_TOKEN'
+            )
+        ]) {
+            sh '''
+                set -eu
+                set +x
+
+                IMAGE="midhun0917/payment-app:${BUILD_NUMBER}"
+
+                kubectl \
+                  --server=https://172.31.38.134:6443 \
+                  --token="$K8S_TOKEN" \
+                  --insecure-skip-tls-verify=true \
+                  -n payment-app \
+                  set image deployment/payment-app \
+                  payment-app="$IMAGE"
+
+                kubectl \
+                  --server=https://172.31.38.134:6443 \
+                  --token="$K8S_TOKEN" \
+                  --insecure-skip-tls-verify=true \
+                  -n payment-app \
+                  rollout status deployment/payment-app \
+                  --timeout=180s
+
+                echo "Kubernetes deployment successful!"
+            '''
+        }
+    }
+}
+
     }
 }
